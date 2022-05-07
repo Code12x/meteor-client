@@ -6,7 +6,10 @@
 package meteordevelopment.meteorclient.systems.modules.movement;
 
 import baritone.api.BaritoneAPI;
+import meteordevelopment.meteorclient.events.entity.DamageEvent;
+import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
+import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -17,6 +20,8 @@ import meteordevelopment.meteorclient.utils.world.GoalDirection;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 
 public class AutoWalk extends Module {
     public enum Mode {
@@ -63,6 +68,20 @@ public class AutoWalk extends Module {
             .visible(() -> mode.get() == Mode.Simple)
             .build()
     );
+    
+    private final Setting<Boolean> autoDisableOnDeath = sgGeneral.add(new BoolSetting.Builder()
+            .name("toggle-on-death")
+            .description("Disables auto walk when you die.")
+            .defaultValue(false)
+            .build()
+    );
+    
+    private final Setting<Boolean> autoDisableOnDisconnect = sgGeneral.add(new BoolSetting.Builder()
+            .name("toggle-on-disconnect")
+            .description("Disables auto walk when you disconnect.")
+            .defaultValue(false)
+            .build()
+    );
 
     private int timer = 0;
     private GoalDirection goal;
@@ -100,6 +119,30 @@ public class AutoWalk extends Module {
             }
 
             timer++;
+        }
+    }
+    
+    @EventHandler
+    private void onDisconnect(GameLeftEvent event) {
+    	if(!autoDisableOnDisconnect.get()) return;
+    	
+		toggle();
+		info("Auto toggled because you disconnected.");
+    }
+
+    @EventHandler
+    private void onDamage(DamageEvent event) {
+    	if(!event.entity.getUuid().equals(mc.player.getUuid())) return;
+        if(!autoDisableOnDeath.get()) return;
+        
+        mc.player.sendChatMessage("Damage Event triggered!");
+        
+        LivingEntity player = event.entity;
+        
+        if (player.deathTime > 0 || player.getHealth() <= 0) {
+        	mc.player.sendChatMessage("I'm dead x.x");
+            toggle();
+            info("Auto toggled because you died.");
         }
     }
 
