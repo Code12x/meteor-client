@@ -120,6 +120,10 @@ public class AutoWalk extends Module {
 
             timer++;
         }
+        if(autoDisableOnDeath.get() && mc.player.getHealth() <= 0) {
+            toggle();
+            info("Auto toggled because you died.");
+        }
     }
     
     @EventHandler
@@ -128,22 +132,6 @@ public class AutoWalk extends Module {
     	
 		toggle();
 		info("Auto toggled because you disconnected.");
-    }
-
-    @EventHandler
-    private void onDamage(DamageEvent event) {
-    	if(!event.entity.getUuid().equals(mc.player.getUuid())) return;
-        if(!autoDisableOnDeath.get()) return;
-        
-        mc.player.sendChatMessage("Damage Event triggered!");
-        
-        LivingEntity player = event.entity;
-        
-        if (player.deathTime > 0 || player.getHealth() <= 0) {
-        	mc.player.sendChatMessage("I'm dead x.x");
-            toggle();
-            info("Auto toggled because you died.");
-        }
     }
 
     private void unpress() {
